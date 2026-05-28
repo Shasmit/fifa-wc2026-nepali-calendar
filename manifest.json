@@ -1,0 +1,24 @@
+{
+  "name": "FIFA World Cup 2026™ Nepali Calendar",
+  "short_name": "WC 2026 पात्रो",
+  "description": "FIFA World Cup 2026 Schedule in Nepali Bikram Sambat Calendar with Nepal Time conversion",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0e17",
+  "theme_color": "#235524",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FIFA World Cup 2026 Schedule in Nepali Bikram Sambat Calendar with Nepal Time conversion">
+  <title>FIFA World Cup 2026™ • नेपाली पात्रो</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&family=Quintessential&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#235524">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+  
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader-content">
+      <div class="loader-logo"><img src="world_cup_logo.png" alt="World Cup 2026 Logo" class="loader-logo-img"></div>
+      <div class="loader-text">FIFA World Cup 2026™</div>
+      <div class="loader-subtext">नेपाली पात्रो | Nepali Calendar</div>
+      <div class="loader-bar"><div class="loader-progress"></div></div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="hidden">
+    <!-- Solidroad Frame System: edge strips that frame the navbar pill -->
+    <div id="navbar-frame" aria-hidden="true"></div>
+    <div class="navbar-frame-right" aria-hidden="true"></div>
+    <!-- Floating Header (Solidroad Exact) -->
+    <header id="header">
+      <div class="header-left">
+        <div class="logo">
+          <img src="world_cup_logo.png" alt="World Cup 2026 Logo" class="logo-img-header">
+          <div class="logo-text-group">
+            <span class="logo-text">World Cup 2026</span>
+            <span class="logo-nepali">नेपाली पात्रो</span>
+          </div>
+        </div>
+      </div>
+      
+      <nav class="header-center">
+        <button id="tab-schedule" class="header-tab active" aria-label="Show Schedule View">Schedule</button>
+        <button id="tab-myfeed" class="header-tab" aria-label="Show My Feed View">My Feed</button>
+      </nav>
+      
+      <div class="header-right">
+        <button id="theme-toggle" class="header-icon-link" title="Toggle Theme" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
+        <button id="fullscreen-btn" class="header-icon-link" title="Fullscreen" aria-label="Toggle fullscreen">⛶</button>
+        <button id="audio-toggle" class="header-icon-link" title="Toggle Sound" aria-label="Toggle sound">🔇</button>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <!-- Schedule View -->
+      <div id="view-schedule">
+        <!-- Hero Section -->
+        <section id="hero-section" class="reveal-section">
+          <div class="hero-particles"></div>
+          <div class="hero-gradient"></div>
+          <div class="hero-content">
+            <!-- Solidroad-style announcement pill -->
+            <div class="hero-announcement">
+              <span class="hero-announcement-badge">2026</span>
+              FIFA World Cup Schedule • Nepal Time (NPT)
+            </div>
+            <h1 class="hero-title">FIFA World Cup 2026™</h1>
+            
+            <!-- Centered Capsule Search Bar -->
+            <div class="hero-search-wrapper">
+              <div class="hero-search-container">
+                <span class="hero-search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="Search teams, stadiums, cities..." autocomplete="off" aria-label="Search matches">
+                <button class="hero-search-btn" id="hero-search-btn" aria-label="Perform search">Search <span class="cta-arrow">→</span></button>
+              </div>
+              <div id="search-results" class="search-dropdown hidden"></div>
+            </div>
+
+            <!-- Next Match Card -->
+            <div class="next-match-card">
+              <div class="hero-badge"><span class="badge-dot"></span> NEXT MATCH</div>
+              <div class="hero-teams">
+                <div class="hero-team hero-team-home">
+                  <span class="hero-flag" id="hero-home-flag">🏳️</span>
+                  <span class="hero-team-name" id="hero-home-name">---</span>
+                </div>
+                <div class="hero-vs">VS</div>
+                <div class="hero-team hero-team-away">
+                  <span class="hero-flag" id="hero-away-flag">🏳️</span>
+                  <span class="hero-team-name" id="hero-away-name">---</span>
+                </div>
+              </div>
+              <div class="hero-info">
+                <span class="hero-info-item" id="hero-stage"><span class="info-icon">🏆</span> <span class="info-text"></span></span>
+                <span class="hero-info-item" id="hero-venue"><span class="info-icon">🏟️</span> <span class="info-text"></span></span>
+                <span class="hero-info-item" id="hero-datetime"><span class="info-icon">🕐</span> <span class="info-text"></span></span>
+                <span class="hero-info-item" id="hero-nepali-date"><span class="info-icon">📅</span> <span class="info-text"></span></span>
+              </div>
+              <div class="hero-countdown" id="hero-countdown">
+                <div class="countdown-unit">
+                  <span class="countdown-value" id="cd-days">00</span>
+                  <span class="countdown-label">Days</span>
+                </div>
+                <div class="countdown-separator">:</div>
+                <div class="countdown-unit">
+                  <span class="countdown-value" id="cd-hours">00</span>
+                  <span class="countdown-label">Hours</span>
+                </div>
+                <div class="countdown-separator">:</div>
+                <div class="countdown-unit">
+                  <span class="countdown-value" id="cd-mins">00</span>
+                  <span class="countdown-label">Minutes</span>
+                </div>
+                <div class="countdown-separator">:</div>
+                <div class="countdown-unit">
+                  <span class="countdown-value" id="cd-secs">00</span>
+                  <span class="countdown-label">Seconds</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Sponsor / Participating Countries -->
+            <div class="hero-sponsors">
+              <span class="sponsors-title">PARTICIPATING NATIONS</span>
+              <div class="sponsors-logos">
+                <span class="sponsor-logo"><img src="https://flagcdn.com/us.svg" height="14" alt="USA" class="flag-img"> USA</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/mx.svg" height="14" alt="MEX" class="flag-img"> MEX</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/ca.svg" height="14" alt="CAN" class="flag-img"> CAN</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/ar.svg" height="14" alt="ARG" class="flag-img"> ARG</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/br.svg" height="14" alt="BRA" class="flag-img"> BRA</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/fr.svg" height="14" alt="FRA" class="flag-img"> FRA</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/gb-eng.svg" height="14" alt="ENG" class="flag-img"> ENG</span>
+                <span class="sponsor-logo"><img src="https://flagcdn.com/es.svg" height="14" alt="ESP" class="flag-img"> ESP</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Today's Matches -->
+        <section id="todays-section" class="reveal-section">
+          <h2 class="section-title"><span class="title-icon">📺</span> Today's Matches</h2>
+          <div id="todays-matches-container" class="matches-scroll"></div>
+        </section>
+
+
+        <!-- Calendar Section -->
+        <section id="calendar-section" class="reveal-section">
+          <div class="calendar-container">
+            <!-- World Cup Header Banner -->
+            <div class="calendar-banner">
+              <div class="cal-banner-left">
+                <span class="cal-banner-label">FIFA World Cup 2026™</span>
+                <span class="cal-banner-title">Matches Calendar <span class="cal-banner-pill">🇳🇵 NPT Time</span></span>
+              </div>
+              <div class="cal-banner-legend">
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot today"></span>
+                  <span>Today</span>
+                </div>
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot match"></span>
+                  <span>Match Day</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="calendar-header">
+              <button id="prev-month" class="cal-nav-btn" aria-label="Previous month">‹</button>
+              <div class="month-display">
+                <h2 id="current-month-label"></h2>
+                <span id="current-month-english" class="month-english"></span>
+              </div>
+              <button id="next-month" class="cal-nav-btn" aria-label="Next month">›</button>
+            </div>
+            <div class="calendar-weekdays" id="calendar-weekdays"></div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+
+            <!-- Inline Match Explorer Panel -->
+            <div id="calendar-selected-matches" class="calendar-selected-matches">
+              <div class="explorer-empty-state">
+                <span class="explorer-empty-icon">⚽</span>
+                <div class="explorer-empty-text">Select a date on the calendar grid to view matches</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Filters -->
+        <section id="filters-section" class="reveal-section">
+          <div class="filters-bar">
+            <div class="filter-group">
+              <label for="filter-team" class="filter-label">Team</label>
+              <select id="filter-team" aria-label="Filter by team"><option value="">All Teams</option></select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-stage" class="filter-label">Stage</label>
+              <select id="filter-stage" aria-label="Filter by stage"><option value="">All Stages</option></select>
+            </div>
+            <button id="clear-filters" class="btn-secondary" aria-label="Clear all filters">✕ Clear Filters</button>
+          </div>
+        </section>
+
+        <!-- Upcoming Fixtures -->
+        <section id="fixtures-section" class="reveal-section">
+          <h2 class="section-title"><span class="title-icon">📋</span> Upcoming Fixtures</h2>
+          <div id="fixtures-list" class="fixtures-grid"></div>
+        </section>
+
+        <!-- Group Standings -->
+        <section id="standings-section" class="reveal-section">
+          <h2 class="section-title"><span class="title-icon">🏆</span> Group Standings</h2>
+          <div id="standings-container" class="standings-grid"></div>
+        </section>
+
+        <!-- Stats -->
+        <section id="stats-section" class="reveal-section">
+          <h2 class="section-title"><span class="title-icon">📊</span> Tournament Statistics</h2>
+          <div id="stats-grid" class="stats-grid"></div>
+        </section>
+
+        <!-- Clock & Date Section -->
+        <section id="clock-section" class="reveal-section">
+          <div class="clock-wrapper">
+            <div class="analog-clock" id="analog-clock">
+              <div class="clock-face">
+                <div class="clock-marks" id="clock-marks"></div>
+                <div class="clock-hand clock-hour" id="clock-hour"></div>
+                <div class="clock-hand clock-minute" id="clock-minute"></div>
+                <div class="clock-hand clock-second" id="clock-second"></div>
+                <div class="clock-center-dot"></div>
+              </div>
+            </div>
+            <div class="digital-clock-panel">
+              <div class="digital-time" id="digital-time">00:00:00</div>
+              <div class="digital-label">Nepal Standard Time (NPT)</div>
+              <div class="digital-date" id="digital-date"></div>
+              <div class="nepali-date-display" id="nepali-date-display"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- My Feed View (Favorites & Reminders) -->
+      <div id="view-myfeed" class="hidden">
+        <!-- My Feed Hero Banner -->
+        <section id="myfeed-hero" class="reveal-section">
+          <div class="myfeed-hero-content">
+            <h2>⭐ My World Cup Feed</h2>
+            <p>Track your favorited teams and manage active match reminders</p>
+          </div>
+        </section>
+
+        <!-- Columns for Favorites and Reminders -->
+        <section id="myfeed-lists-section" class="reveal-section">
+          <div class="myfeed-grid">
+            <div class="myfeed-column">
+              <h3><span class="column-icon">💖</span> Favorited Teams</h3>
+              <div id="fav-teams-list" class="feed-matches-list"></div>
+            </div>
+            <div class="myfeed-column">
+              <h3><span class="column-icon">🔔</span> Active Reminders</h3>
+              <div id="reminders-list" class="feed-matches-list"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer">
+      <div class="footer-top">
+        <div class="footer-brand-section">
+          <div class="footer-logo-group">
+            <img src="world_cup_logo.png" alt="World Cup 2026 Logo" class="footer-logo-img">
+            <span class="footer-brand-title">FIFA World Cup 2026™</span>
+          </div>
+          <p class="footer-brand-desc">The premium digital calendar companion for the FIFA World Cup 2026™. This platform tracks all matches, provides real-time group standings, and converts kick-off times directly to Nepal Standard Time (NPT) with local Nepali Bikram Sambat calendar dates.</p>
+        </div>
+        <div class="footer-quick-links">
+          <h4 class="footer-section-title">Explore App</h4>
+          <ul class="footer-links-list">
+            <li><a href="#hero-section" class="footer-link">Home & Countdown</a></li>
+            <li><a href="#calendar-section" class="footer-link">Nepali Calendar</a></li>
+            <li><a href="#fixtures-section" class="footer-link">Upcoming Fixtures</a></li>
+            <li><a href="#standings-section" class="footer-link">Group Standings</a></li>
+          </ul>
+        </div>
+        <div class="footer-time-info">
+          <h4 class="footer-section-title">NPT Conversion</h4>
+          <p class="footer-time-text">Match schedules are fully synchronized and converted to <strong>Nepal Standard Time (NPT)</strong>, which is UTC+5:45.</p>
+        </div>
+      </div>
+
+      <!-- Bottom Graphic Section mimicking the second image layout -->
+      <div class="footer-bottom-graphic">
+        <div class="footer-graphic-overlay"></div>
+        <div class="footer-pill-wrapper">
+          <div class="footer-custom-pill">
+            <span class="pill-dot"></span>
+            <span class="pill-text">FIFA World Cup 2026™ • Coded for Nepal • NPT Time Conversion</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Match Detail Modal (Moved outside #app to escape CSS Stacking / Transform constraints) -->
+  <div id="match-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-content">
+      <button id="modal-close" class="modal-close-btn" aria-label="Close modal">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
