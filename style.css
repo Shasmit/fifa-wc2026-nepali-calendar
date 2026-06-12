@@ -2779,6 +2779,43 @@ body.dark-theme .match-dot.important {
   color: var(--text-primary) !important;
 }
 
+/* Qualifying position highlight (top 2 in each group) */
+.group-table tr.qualifying-row td:first-child {
+  border-left: 3px solid #00e676;
+}
+
+/* Goal difference coloring */
+.group-table .gd-positive {
+  color: #00e676;
+  font-weight: 600;
+}
+.group-table .gd-negative {
+  color: #ff5252;
+  font-weight: 600;
+}
+
+/* Standing position badge */
+.group-table .standing-pos {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.group-table tr.qualifying-row .standing-pos {
+  background: rgba(0,230,118,0.15);
+  color: #00e676;
+}
+
 /* ---- Stats Grid ---- */
 #stats-section {
   padding: 32px 0 48px;

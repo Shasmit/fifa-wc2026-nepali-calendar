@@ -1674,7 +1674,7 @@ const updateAudioIcon = () => {
    ============================================================ */
 
 /**
- * Render group standings for all 12 groups
+ * Render group standings for all 12 groups — computed dynamically from match results
  */
 const renderStandings = () => {
   const container = document.getElementById('standings-container');
@@ -1683,10 +1683,92 @@ const renderStandings = () => {
   container.innerHTML = '';
 
   const groups = state.fixturesData.groups;
+  const matches = state.fixturesData.matches || [];
+
+  // ── Build standings from match results ───────────────────────────────
+  const computeGroupStandings = (letter, teamList) => {
+    // Initialise stats map keyed by team code
+    const stats = {};
+    teamList.forEach(t => {
+      stats[t.code] = {
+        name: t.name,
+        code: t.code,
+        flag: t.flag,
+        played: 0, won: 0, drawn: 0, lost: 0,
+        gf: 0, ga: 0, gd: 0, pts: 0
+      };
+    });
+
+    // Accumulate finished group-stage results
+    matches.forEach(m => {
+      if (m.group !== letter || m.stage !== 'Group Stage') return;
+      if (m.status !== 'finished' || m.homeScore === null || m.awayScore === null) return;
+
+      const h = stats[m.homeCode];
+      const a = stats[m.awayCode];
+      if (!h || !a) return;
+
+      const hs = m.homeScore, as = m.awayScore;
+      h.played++; a.played++;
+      h.gf += hs; h.ga += as;
+      a.gf += as; a.ga += hs;
+
+      if (hs > as) {
+        h.won++; h.pts += 3;
+        a.lost++;
+      } else if (hs < as) {
+        a.won++; a.pts += 3;
+        h.lost++;
+      } else {
+        h.drawn++; h.pts += 1;
+        a.drawn++; a.pts += 1;
+      }
+    });
+
+    // Compute GD
+    Object.values(stats).forEach(t => { t.gd = t.gf - t.ga; });
+
+    // Sort: pts → gd → gf → name
+    return Object.values(stats).sort((a, b) =>
+      b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name)
+    );
+  };
+
   Object.keys(groups).sort().forEach(letter => {
     const teams = groups[letter];
+    const sorted = computeGroupStandings(letter, teams);
+
     const card = document.createElement('div');
     card.className = 'group-card';
+
+    const rows = sorted.map((team, idx) => {
+      const isTop2 = idx < 2;
+      const isHighlighted = state.favorites.includes(team.code);
+      const rowClass = [
+        isHighlighted ? 'favorite-team' : '',
+        isTop2 && team.played > 0 ? 'qualifying-row' : ''
+      ].filter(Boolean).join(' ');
+
+      const gdStr = team.gd > 0 ? `+${team.gd}` : team.gd;
+
+      return `
+        <tr class="${rowClass}">
+          <td class="team-cell">
+            <span class="standing-pos">${idx + 1}</span>
+            <span class="team-flag">${getFlagImg(team.code, '20', team.name)}</span>
+            <span class="team-name team-name-full">${team.name}</span>
+            <span class="team-name team-name-short">${team.code}</span>
+          </td>
+          <td>${team.played}</td>
+          <td>${team.won}</td>
+          <td>${team.drawn}</td>
+          <td>${team.lost}</td>
+          <td class="${team.gd > 0 ? 'gd-positive' : team.gd < 0 ? 'gd-negative' : ''}">${team.played > 0 ? gdStr : '—'}</td>
+          <td class="pts-cell"><strong>${team.pts}</strong></td>
+        </tr>
+      `;
+    }).join('');
+
     card.innerHTML = `
       <div class="group-header">Group ${letter}</div>
       <table class="group-table">

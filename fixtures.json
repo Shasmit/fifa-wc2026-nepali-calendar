@@ -456,10 +456,10 @@
       "country": "Mexico",
       "stage": "Group Stage",
       "group": "A",
-      "status": "scheduled",
+      "status": "finished",
       "importance": "high",
-      "homeScore": null,
-      "awayScore": null
+      "homeScore": 2,
+      "awayScore": 0
     },
     {
       "id": 2,
@@ -476,10 +476,10 @@
       "country": "Mexico",
       "stage": "Group Stage",
       "group": "A",
-      "status": "scheduled",
+      "status": "finished",
       "importance": "normal",
-      "homeScore": null,
-      "awayScore": null
+      "homeScore": 2,
+      "awayScore": 1
     },
     {
       "id": 3,
