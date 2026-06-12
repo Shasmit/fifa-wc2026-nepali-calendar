@@ -1529,6 +1529,149 @@ body.dark-theme .next-match-card .countdown-value {
   font-size: 0.95rem;
 }
 
+/* ── Today card internal layout (new classes) ─────────────── */
+.today-card-stage {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-tertiary, #a78bfa);
+  margin-bottom: 14px;
+}
+
+.today-card-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.today-card-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  transition: opacity 0.2s;
+}
+
+.today-card-team.team-winner .today-card-name {
+  color: #00e676;
+  font-weight: 800;
+}
+
+.today-card-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* VS separator */
+.today-card-vs {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Score block (finished state) */
+.today-card-score-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.today-card-score {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.today-card-ft-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(0, 230, 118, 0.12);
+  color: #00e676;
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  border-radius: 10px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.today-card-live-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(255, 59, 59, 0.12);
+  color: #ff4444;
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  border-radius: 10px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+/* Info row */
+.today-card-info {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-card-result-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.today-card-result-label.live-text {
+  color: #ff4444;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+.today-card-venue {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Finished card — subtle green top accent */
+.today-match-card.match-finished::before {
+  background: linear-gradient(90deg, #00e676, #00c853);
+}
+
+/* Live card — pulsing red top accent */
+.today-match-card.match-live::before {
+  background: linear-gradient(90deg, #ff4444, #ff1744);
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
 /* ---- Filters ---- */
 #filters-section {
   padding: 24px 0;

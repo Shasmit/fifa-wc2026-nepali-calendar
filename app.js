@@ -1001,26 +1001,61 @@ const renderTodaysMatches = () => {
   }
 
   todaysMatches.forEach(match => {
-    const matchNPT = toNPT(new Date(match.dateTime));
+    const matchNPT    = toNPT(new Date(match.dateTime));
+    const nowNPT      = toNPT(new Date());
+    const matchMs     = new Date(match.dateTime).getTime();
+    const nowMs       = Date.now();
+    // A match is considered finished ~110 min after kickoff if not explicitly marked
+    const MATCH_DURATION_MS = 110 * 60 * 1000;
+    const isFinished  = match.status === 'finished' || nowMs >= matchMs + MATCH_DURATION_MS;
+    const isLive      = !isFinished && nowMs >= matchMs && nowMs < matchMs + MATCH_DURATION_MS;
+    const hasScore    = match.homeScore !== null && match.awayScore !== null;
+
+    // ── Build the centre section (score or VS or time) ──────────────────
+    let centreHtml;
+    if (isFinished && hasScore) {
+      centreHtml = `
+        <div class="today-card-score-block">
+          <span class="today-card-score">${match.homeScore} – ${match.awayScore}</span>
+          <span class="today-card-ft-badge">FT</span>
+        </div>`;
+    } else if (isLive) {
+      centreHtml = `
+        <div class="today-card-score-block">
+          <span class="today-card-vs">VS</span>
+          <span class="today-card-live-badge">🔴 LIVE</span>
+        </div>`;
+    } else {
+      centreHtml = `<span class="today-card-vs">VS</span>`;
+    }
+
+    // ── Build the info row (time or result label) ────────────────────────
+    let infoHtml;
+    if (isFinished) {
+      infoHtml = `<span class="today-card-result-label">Full Time</span>`;
+    } else if (isLive) {
+      infoHtml = `<span class="today-card-result-label live-text">In Progress</span>`;
+    } else {
+      infoHtml = `<span>🕐 ${formatTime12h(matchNPT)} NPT</span>`;
+    }
+
     const card = document.createElement('div');
-    card.className = 'today-match-card';
+    card.className = `today-match-card${isFinished ? ' match-finished' : isLive ? ' match-live' : ''}`;
     card.setAttribute('data-match-id', match.id);
     card.innerHTML = `
       <div class="today-card-stage">${match.group ? `Group ${match.group}` : match.stage}</div>
       <div class="today-card-teams">
-        <div class="today-card-team">
+        <div class="today-card-team ${isFinished && hasScore && match.homeScore > match.awayScore ? 'team-winner' : ''}">
           <span class="today-card-flag">${getFlagImg(match.homeCode, '26', match.homeTeam)}</span>
           <span class="today-card-name">${match.homeCode}</span>
         </div>
-        <span class="today-card-vs">VS</span>
-        <div class="today-card-team">
+        ${centreHtml}
+        <div class="today-card-team ${isFinished && hasScore && match.awayScore > match.homeScore ? 'team-winner' : ''}">
           <span class="today-card-flag">${getFlagImg(match.awayCode, '26', match.awayTeam)}</span>
           <span class="today-card-name">${match.awayCode}</span>
         </div>
       </div>
-      <div class="today-card-info">
-        <span>🕐 ${formatTime12h(matchNPT)} NPT</span>
-      </div>
+      <div class="today-card-info">${infoHtml}</div>
       <div class="today-card-venue">${match.stadium}</div>
     `;
     card.addEventListener('click', () => openMatchModal(match));
