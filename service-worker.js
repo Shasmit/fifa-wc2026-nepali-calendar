@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wc-nepali-calendar-v1';
+const CACHE_NAME = 'wc-nepali-calendar-v3';
 const ASSETS = [
   './index.html',
   './style.css',

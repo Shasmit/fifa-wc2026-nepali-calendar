@@ -1009,7 +1009,9 @@ const renderTodaysMatches = () => {
     const MATCH_DURATION_MS = 110 * 60 * 1000;
     const isFinished  = match.status === 'finished' || nowMs >= matchMs + MATCH_DURATION_MS;
     const isLive      = !isFinished && nowMs >= matchMs && nowMs < matchMs + MATCH_DURATION_MS;
-    const hasScore    = match.homeScore !== null && match.awayScore !== null;
+    // Use != null to safely catch both null AND undefined
+    const hasScore    = match.homeScore != null && match.awayScore != null
+                        && !isNaN(Number(match.homeScore)) && !isNaN(Number(match.awayScore));
 
     // ── Build the centre section (score or VS or time) ──────────────────
     let centreHtml;
@@ -1722,24 +1724,55 @@ const STANDINGS_REFRESH_MS = 5 * 60 * 1000;
  * Falls back to computing from fixtures.json on any error.
  */
 const fetchLiveStandings = async () => {
-  const container = document.getElementById('standings-container');
   const badge = document.getElementById('standings-live-badge');
   const lastUpdEl = document.getElementById('standings-last-updated');
 
   try {
-    const [groupsRes, teamsRes] = await Promise.all([
+    const [groupsRes, teamsRes, gamesRes] = await Promise.all([
       fetch(`${WC26_API}/groups`, { cache: 'no-store' }),
-      fetch(`${WC26_API}/teams`,  { cache: 'no-store' })
+      fetch(`${WC26_API}/teams`,  { cache: 'no-store' }),
+      fetch(`${WC26_API}/games`,  { cache: 'no-store' })
     ]);
 
     if (!groupsRes.ok || !teamsRes.ok) throw new Error('API response not ok');
 
     const groupsJson = await groupsRes.json();
     const teamsJson  = await teamsRes.json();
+    const gamesJson  = gamesRes.ok ? await gamesRes.json() : { games: [] };
 
     state.liveStandingsData = groupsJson.groups || [];
     state.liveTeamsData     = teamsJson.teams  || [];
     state.standingsLastUpdated = new Date();
+
+    // ── Merge live scores from API into our fixturesData.matches ──────────
+    const liveGames = gamesJson.games || [];
+    if (liveGames.length && state.fixturesData && state.fixturesData.matches) {
+      // Build a lookup: "HomeNameLower|AwayNameLower" → game
+      const gameMap = {};
+      liveGames.forEach(g => {
+        const key = `${(g.home_team_name_en || '').toLowerCase()}|${(g.away_team_name_en || '').toLowerCase()}`;
+        gameMap[key] = g;
+      });
+
+      state.fixturesData.matches.forEach(m => {
+        const key = `${(m.homeTeam || '').toLowerCase()}|${(m.awayTeam || '').toLowerCase()}`;
+        const g = gameMap[key];
+        if (g) {
+          const hScore = parseInt(g.home_score);
+          const aScore = parseInt(g.away_score);
+          const isApiFinished = g.finished === 'TRUE' || g.time_elapsed === 'finished';
+          if (!isNaN(hScore) && !isNaN(aScore)) {
+            m.homeScore = hScore;
+            m.awayScore = aScore;
+          }
+          if (isApiFinished) m.status = 'finished';
+          else if (g.time_elapsed && g.time_elapsed !== 'notstarted') m.status = 'live';
+        }
+      });
+
+      // Re-render today's matches with fresh scores
+      renderTodaysMatches();
+    }
 
     if (badge) {
       badge.textContent = '🔴 LIVE';
