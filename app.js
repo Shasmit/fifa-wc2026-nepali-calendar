@@ -501,6 +501,10 @@ const state = {
   modalCountdownInterval: null,
   searchDebounceTimer: null,
   reminders: JSON.parse(localStorage.getItem('wc2026_reminders') || '[]'),
+  liveStandingsData: null,   // Cached from worldcup26.ir /get/groups
+  liveTeamsData: null,       // Cached from worldcup26.ir /get/teams
+  standingsLastUpdated: null,
+  standingsRefreshInterval: null,
 };
 
 
@@ -1670,87 +1674,191 @@ const updateAudioIcon = () => {
 
 
 /* ============================================================
-   SECTION 17: STANDINGS
+   SECTION 17: LIVE STANDINGS API (worldcup26.ir)
    ============================================================ */
 
+/** Base URL for the free, open, no-auth WC2026 API */
+const WC26_API = 'https://worldcup26.ir/get';
+/** Auto-refresh interval: every 5 minutes during live matches */
+const STANDINGS_REFRESH_MS = 5 * 60 * 1000;
+
 /**
- * Render group standings for all 12 groups — computed dynamically from match results
+ * Fetch live standings + teams from worldcup26.ir, then re-render.
+ * Falls back to computing from fixtures.json on any error.
  */
-const renderStandings = () => {
+const fetchLiveStandings = async () => {
+  const container = document.getElementById('standings-container');
+  const badge = document.getElementById('standings-live-badge');
+  const lastUpdEl = document.getElementById('standings-last-updated');
+
+  try {
+    const [groupsRes, teamsRes] = await Promise.all([
+      fetch(`${WC26_API}/groups`, { cache: 'no-store' }),
+      fetch(`${WC26_API}/teams`,  { cache: 'no-store' })
+    ]);
+
+    if (!groupsRes.ok || !teamsRes.ok) throw new Error('API response not ok');
+
+    const groupsJson = await groupsRes.json();
+    const teamsJson  = await teamsRes.json();
+
+    state.liveStandingsData = groupsJson.groups || [];
+    state.liveTeamsData     = teamsJson.teams  || [];
+    state.standingsLastUpdated = new Date();
+
+    if (badge) {
+      badge.textContent = '🔴 LIVE';
+      badge.className = 'standings-badge live';
+    }
+    if (lastUpdEl) {
+      const t = state.standingsLastUpdated;
+      const npt = new Date(t.getTime() + (5 * 60 + 45) * 60 * 1000);
+      lastUpdEl.textContent = `Updated ${npt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} NPT`;
+    }
+
+    renderStandingsFromAPI();
+  } catch (err) {
+    console.warn('Live standings fetch failed, using computed fallback:', err);
+    if (badge) {
+      badge.textContent = '📋 Offline';
+      badge.className = 'standings-badge offline';
+    }
+    renderStandingsFallback();
+  }
+};
+
+/**
+ * Render standings from the live API data (worldcup26.ir)
+ */
+const renderStandingsFromAPI = () => {
+  const container = document.getElementById('standings-container');
+  if (!container || !state.liveStandingsData || !state.liveTeamsData) return;
+
+  // Build a quick lookup: team_id → team info
+  const teamMap = {};
+  state.liveTeamsData.forEach(t => {
+    teamMap[String(t.id)] = {
+      name: t.name_en,
+      code: t.fifa_code,
+      flag: t.flag,   // URL from flagcdn.com
+      group: t.groups
+    };
+  });
+
+  // Also get our local group ordering from fixturesData for consistency
+  const localGroups = state.fixturesData ? state.fixturesData.groups : {};
+
+  // Sort groups alphabetically
+  const sorted = [...state.liveStandingsData].sort((a, b) => a.name.localeCompare(b.name));
+
+  container.innerHTML = '';
+  sorted.forEach(group => {
+    const letter = group.name;
+
+    // Sort teams in the group by pts → gd → gf → name
+    const sortedTeams = [...group.teams].sort((a, b) => {
+      const aPts = parseInt(a.pts) || 0, bPts = parseInt(b.pts) || 0;
+      const aGd  = parseInt(a.gd)  || 0, bGd  = parseInt(b.gd)  || 0;
+      const aGf  = parseInt(a.gf)  || 0, bGf  = parseInt(b.gf)  || 0;
+      return bPts - aPts || bGd - aGd || bGf - aGf;
+    });
+
+    const rows = sortedTeams.map((t, idx) => {
+      const info   = teamMap[String(t.team_id)] || { name: `Team ${t.team_id}`, code: '???', flag: '', group: letter };
+      const pts    = parseInt(t.pts) || 0;
+      const played = parseInt(t.mp)  || 0;
+      const gd     = parseInt(t.gd)  || 0;
+      const gdStr  = gd > 0 ? `+${gd}` : gd;
+      const isTop2 = idx < 2 && played > 0;
+      const isFav  = state.favorites.includes(info.code);
+
+      const rowClass = [isFav ? 'favorite-team' : '', isTop2 ? 'qualifying-row' : ''].filter(Boolean).join(' ');
+
+      // Use flag image from API (flagcdn.com) or fallback to our getFlagImg
+      const flagHtml = info.flag
+        ? `<img src="${info.flag}" alt="${info.name}" width="20" height="14" style="border-radius:2px;object-fit:cover;vertical-align:middle;">`
+        : getFlagImg(info.code, '20', info.name);
+
+      return `
+        <tr class="${rowClass}">
+          <td class="team-cell">
+            <span class="standing-pos">${idx + 1}</span>
+            <span class="team-flag">${flagHtml}</span>
+            <span class="team-name team-name-full">${info.name}</span>
+            <span class="team-name team-name-short">${info.code}</span>
+          </td>
+          <td>${played}</td>
+          <td>${parseInt(t.w) || 0}</td>
+          <td>${parseInt(t.d) || 0}</td>
+          <td>${parseInt(t.l) || 0}</td>
+          <td class="${gd > 0 ? 'gd-positive' : gd < 0 ? 'gd-negative' : ''}">${played > 0 ? gdStr : '—'}</td>
+          <td class="pts-cell"><strong>${pts}</strong></td>
+        </tr>
+      `;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.innerHTML = `
+      <div class="group-header">Group ${letter}</div>
+      <table class="group-table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th title="Played">P</th>
+            <th title="Won">W</th>
+            <th title="Drawn">D</th>
+            <th title="Lost">L</th>
+            <th title="Goal Difference">GD</th>
+            <th title="Points">Pts</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    container.appendChild(card);
+  });
+};
+
+/**
+ * Fallback: compute standings from local fixtures.json results
+ */
+const renderStandingsFallback = () => {
   const container = document.getElementById('standings-container');
   if (!container || !state.fixturesData) return;
 
   container.innerHTML = '';
-
   const groups = state.fixturesData.groups;
   const matches = state.fixturesData.matches || [];
 
-  // ── Build standings from match results ───────────────────────────────
   const computeGroupStandings = (letter, teamList) => {
-    // Initialise stats map keyed by team code
     const stats = {};
     teamList.forEach(t => {
-      stats[t.code] = {
-        name: t.name,
-        code: t.code,
-        flag: t.flag,
-        played: 0, won: 0, drawn: 0, lost: 0,
-        gf: 0, ga: 0, gd: 0, pts: 0
-      };
+      stats[t.code] = { name: t.name, code: t.code, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
     });
-
-    // Accumulate finished group-stage results
     matches.forEach(m => {
       if (m.group !== letter || m.stage !== 'Group Stage') return;
       if (m.status !== 'finished' || m.homeScore === null || m.awayScore === null) return;
-
-      const h = stats[m.homeCode];
-      const a = stats[m.awayCode];
+      const h = stats[m.homeCode], a = stats[m.awayCode];
       if (!h || !a) return;
-
       const hs = m.homeScore, as = m.awayScore;
-      h.played++; a.played++;
-      h.gf += hs; h.ga += as;
-      a.gf += as; a.ga += hs;
-
-      if (hs > as) {
-        h.won++; h.pts += 3;
-        a.lost++;
-      } else if (hs < as) {
-        a.won++; a.pts += 3;
-        h.lost++;
-      } else {
-        h.drawn++; h.pts += 1;
-        a.drawn++; a.pts += 1;
-      }
+      h.played++; a.played++; h.gf += hs; h.ga += as; a.gf += as; a.ga += hs;
+      if (hs > as) { h.won++; h.pts += 3; a.lost++; }
+      else if (hs < as) { a.won++; a.pts += 3; h.lost++; }
+      else { h.drawn++; h.pts++; a.drawn++; a.pts++; }
     });
-
-    // Compute GD
     Object.values(stats).forEach(t => { t.gd = t.gf - t.ga; });
-
-    // Sort: pts → gd → gf → name
-    return Object.values(stats).sort((a, b) =>
-      b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name)
-    );
+    return Object.values(stats).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
   };
 
   Object.keys(groups).sort().forEach(letter => {
     const teams = groups[letter];
     const sorted = computeGroupStandings(letter, teams);
-
-    const card = document.createElement('div');
-    card.className = 'group-card';
-
     const rows = sorted.map((team, idx) => {
-      const isTop2 = idx < 2;
-      const isHighlighted = state.favorites.includes(team.code);
-      const rowClass = [
-        isHighlighted ? 'favorite-team' : '',
-        isTop2 && team.played > 0 ? 'qualifying-row' : ''
-      ].filter(Boolean).join(' ');
-
+      const isTop2 = idx < 2 && team.played > 0;
+      const isFav  = state.favorites.includes(team.code);
+      const rowClass = [isFav ? 'favorite-team' : '', isTop2 ? 'qualifying-row' : ''].filter(Boolean).join(' ');
       const gdStr = team.gd > 0 ? `+${team.gd}` : team.gd;
-
       return `
         <tr class="${rowClass}">
           <td class="team-cell">
@@ -1759,52 +1867,67 @@ const renderStandings = () => {
             <span class="team-name team-name-full">${team.name}</span>
             <span class="team-name team-name-short">${team.code}</span>
           </td>
-          <td>${team.played}</td>
-          <td>${team.won}</td>
-          <td>${team.drawn}</td>
-          <td>${team.lost}</td>
+          <td>${team.played}</td><td>${team.won}</td><td>${team.drawn}</td><td>${team.lost}</td>
           <td class="${team.gd > 0 ? 'gd-positive' : team.gd < 0 ? 'gd-negative' : ''}">${team.played > 0 ? gdStr : '—'}</td>
           <td class="pts-cell"><strong>${team.pts}</strong></td>
-        </tr>
-      `;
+        </tr>`;
     }).join('');
-
+    const card = document.createElement('div');
+    card.className = 'group-card';
     card.innerHTML = `
       <div class="group-header">Group ${letter}</div>
       <table class="group-table">
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
-            <th>GD</th>
-            <th>Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${teams.map(team => `
-            <tr class="${state.favorites.includes(team.code) ? 'favorite-team' : ''}">
-              <td class="team-cell">
-                <span class="team-flag">${getFlagImg(team.code, '20', team.name)}</span>
-                <span class="team-name team-name-full">${team.name}</span>
-                <span class="team-name team-name-short">${team.code}</span>
-              </td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-              <td>0</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+        <thead><tr><th>Team</th><th title="Played">P</th><th title="Won">W</th><th title="Drawn">D</th><th title="Lost">L</th><th title="Goal Difference">GD</th><th title="Points">Pts</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
     container.appendChild(card);
   });
 };
+
+/**
+ * Main entry point: inject the header UI, trigger first fetch, start auto-refresh
+ */
+const initLiveStandings = () => {
+  // Inject the status bar above the standings grid
+  const section = document.getElementById('standings-section');
+  if (section && !document.getElementById('standings-live-badge')) {
+    const bar = document.createElement('div');
+    bar.className = 'standings-status-bar';
+    bar.innerHTML = `
+      <span id="standings-live-badge" class="standings-badge loading">⏳ Loading...</span>
+      <span id="standings-last-updated" class="standings-last-updated"></span>
+      <button id="standings-refresh-btn" class="standings-refresh-btn" title="Refresh standings now">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh
+      </button>
+    `;
+    // Insert the bar before the standings container
+    const container = document.getElementById('standings-container');
+    if (container) section.insertBefore(bar, container);
+
+    document.getElementById('standings-refresh-btn').addEventListener('click', () => {
+      const badge = document.getElementById('standings-live-badge');
+      if (badge) { badge.textContent = '⏳ Refreshing...'; badge.className = 'standings-badge loading'; }
+      fetchLiveStandings();
+    });
+  }
+
+  // Initial fetch
+  fetchLiveStandings();
+
+  // Auto-refresh every 5 minutes
+  if (state.standingsRefreshInterval) clearInterval(state.standingsRefreshInterval);
+  state.standingsRefreshInterval = setInterval(fetchLiveStandings, STANDINGS_REFRESH_MS);
+};
+
+/**
+ * Render group standings — now delegates to live API or fallback
+ */
+const renderStandings = () => {
+  initLiveStandings();
+};
+
+
 
 
 /* ============================================================

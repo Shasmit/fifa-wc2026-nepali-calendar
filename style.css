@@ -2816,6 +2816,90 @@ body.dark-theme .match-dot.important {
   color: #00e676;
 }
 
+/* ── Live Standings Status Bar ───────────────────────────── */
+.standings-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px 14px;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.standings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.standings-badge.live {
+  background: rgba(255, 59, 59, 0.18);
+  color: #ff4444;
+  border: 1px solid rgba(255, 59, 59, 0.35);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.standings-badge.offline {
+  background: rgba(255, 170, 0, 0.15);
+  color: #ffaa00;
+  border: 1px solid rgba(255, 170, 0, 0.3);
+}
+
+.standings-badge.loading {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.standings-last-updated {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.standings-refresh-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.standings-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: rotate(15deg);
+}
+
+.standings-refresh-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.standings-refresh-btn:hover svg {
+  transform: rotate(180deg);
+}
+
 /* ---- Stats Grid ---- */
 #stats-section {
   padding: 32px 0 48px;
